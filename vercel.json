@@ -2,10 +2,81 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/:category(salon|boutique|bakery|restaurant|clinic|gym|photography|furniture|homestay|taxi|driving|coaching|mobile|auto)", "destination": "/index.html" }
+    {
+      "source": "/salon",
+      "destination": "/"
+    },
+    {
+      "source": "/boutique",
+      "destination": "/"
+    },
+    {
+      "source": "/bakery",
+      "destination": "/"
+    },
+    {
+      "source": "/restaurant",
+      "destination": "/"
+    },
+    {
+      "source": "/clinic",
+      "destination": "/"
+    },
+    {
+      "source": "/gym",
+      "destination": "/"
+    },
+    {
+      "source": "/photography",
+      "destination": "/"
+    },
+    {
+      "source": "/furniture",
+      "destination": "/"
+    },
+    {
+      "source": "/homestay",
+      "destination": "/"
+    },
+    {
+      "source": "/taxi",
+      "destination": "/"
+    },
+    {
+      "source": "/driving",
+      "destination": "/"
+    },
+    {
+      "source": "/coaching",
+      "destination": "/"
+    },
+    {
+      "source": "/mobile",
+      "destination": "/"
+    },
+    {
+      "source": "/auto",
+      "destination": "/"
+    }
   ],
   "headers": [
-    { "source": "/(.*)", "headers": [ { "key": "X-Robots-Tag", "value": "noindex, nofollow" } ] },
-    { "source": "/assets/(.*)", "headers": [ { "key": "Cache-Control", "value": "public, max-age=3600" } ] }
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
+      ]
+    }
   ]
 }
