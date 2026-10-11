@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo Link Builder</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+:root{--bg:#f6f5f1;--surface:#fff;--ink:#1c1d1c;--muted:#666b68;--line:#e2e0d9;--accent:#0f766e}
+@media (prefers-color-scheme:dark){:root{--bg:#141413;--surface:#1d1d1b;--ink:#ecebe6;--muted:#a29f96;--line:#33322d;--accent:#2dd4bf}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:28px 16px 60px}
+h1{font-size:26px;margin:0 0 4px}
+h2{font-size:18px;margin:0 0 12px}
+.sub{color:var(--muted);margin:0 0 22px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+label{display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--muted);font-weight:600}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:9px 10px;font-weight:400}
+textarea{min-height:90px;resize:vertical}
+.full{grid-column:1/-1}
+.out{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.out input{flex:1;min-width:240px;font-family:ui-monospace,monospace;font-size:13px}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:9px;padding:9px 14px;font:inherit;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.hint{color:var(--muted);font-size:13px;margin:8px 0 0}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:12px}
+td,th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+td a{color:var(--accent);word-break:break-all}
+@media (max-width:720px){.grid{grid-template-columns:1fr 1fr}}
+@media (max-width:480px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Demo link builder</h1>
+  <p class="sub">Create a personalised demo link for a business. Private tool – not linked from the public site.</p>
+
+  <div class="card">
+    <h2>Single business</h2>
+    <div class="grid">
+      <label class="full">Business type (auto-picks the template)<input id="type" placeholder="e.g. bridal makeup studio, dental clinic, homestay"></label>
+      <label>Template<select id="cat"></select></label>
+      <label>Business name<input id="name" placeholder="Neyora Beauty Box"></label>
+      <label>Town<input id="town" placeholder="Alakode"></label>
+      <label>Business phone / WhatsApp<input id="phone" placeholder="+91 98xxx xxxxx"></label>
+      <label>Google rating (optional)<input id="rating" placeholder="4.8"></label>
+      <label>Review count (optional)<input id="reviews" placeholder="165"></label>
+      <label>Brand colour (optional)<input id="color" type="color" value="#000000"></label>
+      <label class="full">WhatsApp message to send them<textarea id="tpl">Hi, I'm {owner}, a web developer from Kannur. I saw {name} on Google Maps – lovely reviews!
+
+I made a quick sample website with your name on it, to show what your own site could look like:
+{demo}
+
+If you like it, I can set it up with your real photos and prices. If not, no problem at all 🙂</textarea></label>
+    </div>
+    <div class="out">
+      <input id="link" readonly>
+      <button class="btn" id="copy">Copy link</button>
+      <a class="btn" id="open" target="_blank" rel="noopener">Open demo</a>
+      <a class="btn primary" id="wa" target="whatsapp_web" rel="noopener">Send on WhatsApp Web</a>
+    </div>
+    <p class="hint">Leave the brand colour black to keep the template's own colour.</p>
+  </div>
+
+  <div class="card">
+    <h2>Bulk (from your lead list CSV)</h2>
+    <p class="hint" style="margin:0 0 10px">Upload the CSV downloaded from the lead list. Needs columns: Name, Category, Town, Phone (Rating and Reviews optional).</p>
+    <input type="file" id="csv" accept=".csv">
+    <div class="out"><button class="btn primary" id="dl" disabled>Download CSV with demo links</button></div>
+    <div id="preview"></div>
+  </div>
+</div>
+
+<script src="/config.js"></script>
+<script src="/assets/categories.js"></script>
+<script>
+const A = window.AGENCY || {}, C = window.CATEGORIES, KW = window.CATEGORY_KEYWORDS;
+const $ = id => document.getElementById(id);
+$("cat").innerHTML = Object.entries(C).map(([k,c]) => `<option value="${k}">${c.label}</option>`).join("");
+
+function detect(text){
+  const t = (text||"").toLowerCase();
+  let best = "", score = 0;
+  for (const [k, words] of Object.entries(KW)) {
+    const s = words.reduce((n,w) => n + (t.includes(w) ? w.length : 0), 0);
+    if (s > score) { score = s; best = k; }
+  }
+  return best;
+}
+function normPhone(p){ let d=String(p||"").replace(/\D/g,""); if(d.length===10) d="91"+d; if(d.length===11&&d[0]==="0") d="91"+d.slice(1); return d; }
+
+function buildLink(o){
+  const u = new URL("/" + o.cat, location.origin);
+  if (o.name) u.searchParams.set("n", o.name);
+  if (o.town) u.searchParams.set("t", o.town);
+  const p = normPhone(o.phone); if (p) u.searchParams.set("p", p);
+  if (o.rating) u.searchParams.set("r", o.rating);
+  if (o.reviews) u.searchParams.set("rv", String(o.reviews).replace(/\D/g,""));
+  if (o.color && o.color !== "#000000") u.searchParams.set("color", o.color.replace("#",""));
+  return u.toString();
+}
+function message(o, link){
+  return $("tpl").value.replace(/\{owner\}/g, A.owner || "").replace(/\{name\}/g, o.name || "your business").replace(/\{demo\}/g, link);
+}
+function update(){
+  const o = { cat:$("cat").value, name:$("name").value.trim(), town:$("town").value.trim(), phone:$("phone").value, rating:$("rating").value.trim(), reviews:$("reviews").value.trim(), color:$("color").value };
+  const link = buildLink(o);
+  $("link").value = link; $("open").href = link;
+  const p = normPhone(o.phone);
+  $("wa").href = p ? `https://web.whatsapp.com/send?phone=${p}&text=${encodeURIComponent(message(o, link))}` : "#";
+}
+$("type").addEventListener("input", () => { const k = detect($("type").value); if (k) $("cat").value = k; update(); });
+["cat","name","town","phone","rating","reviews","color","tpl"].forEach(id => $(id).addEventListener("input", update));
+$("copy").addEventListener("click", async () => { try { await navigator.clipboard.writeText($("link").value); $("copy").textContent = "Copied!"; setTimeout(()=>$("copy").textContent="Copy link",1200);} catch(e){ $("link").select(); } });
+update();
+
+/* bulk */
+function parseCSV(text){
+  const rows=[]; let row=[], cell="", q=false;
+  for (let i=0;i<text.length;i++){ const ch=text[i];
+    if(q){ if(ch==='"'){ if(text[i+1]==='"'){cell+='"';i++;} else q=false; } else cell+=ch; }
+    else if(ch==='"') q=true; else if(ch===','){row.push(cell);cell="";} else if(ch==='\n'){row.push(cell);rows.push(row);row=[];cell="";} else if(ch!=='\r') cell+=ch; }
+  if(cell||row.length){row.push(cell);rows.push(row);}
+  return rows;
+}
+let bulkOut = null;
+$("csv").addEventListener("change", async e => {
+  const f = e.target.files[0]; if(!f) return;
+  const rows = parseCSV((await f.text()).replace(/^﻿/,""));
+  const head = rows.shift().map(h=>h.trim().toLowerCase());
+  const col = n => head.findIndex(h => h === n || h.startsWith(n));
+  const iN=col("name"), iC=col("category"), iG=col("category group"), iT=col("town"), iP=col("phone"), iR=col("rating"), iV=col("reviews");
+  bulkOut = [["Name","Town","Phone","Template","Demo link","WhatsApp Web link"]];
+  const prev = [];
+  rows.filter(r=>r[iN]).forEach(r => {
+    const o = { name:r[iN].split(/\s+\|\s+/)[0].trim(), town:r[iT]||"", phone:r[iP]||"", rating:iR>=0?r[iR]:"", reviews:iV>=0?r[iV]:"" };
+    o.cat = detect(`${r[iC]||""} ${r[iN]} ${iG>=0?r[iG]:""}`) || "salon";
+    const link = buildLink(o), p = normPhone(o.phone);
+    const wa = p ? `https://web.whatsapp.com/send?phone=${p}&text=${encodeURIComponent(message(o, link))}` : "";
+    bulkOut.push([o.name,o.town,o.phone,o.cat,link,wa]);
+    if (prev.length < 15) prev.push(`<tr><td>${o.name}</td><td>${o.cat}</td><td><a href="${link}" target="_blank" rel="noopener">${link}</a></td></tr>`);
+  });
+  $("preview").innerHTML = `<p class="hint">${bulkOut.length-1} links generated. Preview:</p><table><tr><th>Business</th><th>Template</th><th>Demo link</th></tr>${prev.join("")}</table>`;
+  $("dl").disabled = false;
+});
+$("dl").addEventListener("click", () => {
+  const text = bulkOut.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["﻿"+text],{type:"text/csv"})); a.download = "demo-links.csv"; a.click();
+});
+</script>
+</body>
+</html>
